@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
 export default function ResetPassword() {
@@ -12,18 +12,53 @@ export default function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [success, setSuccess] = useState(false)
+  const [isValid, setIsValid] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Check if user is in recovery mode
-    const checkSession = async () => {
+    // Check if user has valid recovery session
+    const checkRecoverySession = async () => {
       const { data } = await supabase.auth.getSession()
-      if (!data.session) {
+      if (data.session) {
+        setIsValid(true)
+      } else {
         setMessage('Invalid or expired reset link. Please request a new one.')
+        setIsValid(false)
       }
     }
-    checkSession()
+    checkRecoverySession()
   }, [])
+
+  const handleResetPassword = async () => {
+    if (password !== confirmPassword) {
+      setMessage('Passwords do not match!')
+      return
+    }
+
+    if (password.length < 6) {
+      setMessage('Password must be at least 6 characters long!')
+      return
+    }
+
+    setLoading(true)
+    setMessage('')
+
+    const { error } = await supabase.auth.updateUser({
+      password: password,
+    })
+
+    if (error) {
+      setMessage(error.message)
+    } else {
+      setMessage('Password reset successfully! Redirecting to login...')
+      setSuccess(true)
+      setTimeout(() => {
+        router.push('/login')
+      }, 2000)
+    }
+    setLoading(false)
+  }
 
   const handleResetPassword = async () => {
     if (password !== confirmPassword) {
@@ -86,13 +121,13 @@ export default function ResetPassword() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter new password"
-                disabled={success}
+                disabled={success || !isValid}
                 className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder-gray-300 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-400/20 transition-all duration-300 text-lg backdrop-blur-sm pr-12 disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                disabled={success}
+                disabled={success || !isValid}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white transition-colors disabled:opacity-50"
               >
                 {showPassword ? '👁️' : '👁️‍🗨️'}
@@ -108,13 +143,13 @@ export default function ResetPassword() {
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
-                disabled={success}
+                disabled={success || !isValid}
                 className="w-full bg-white/10 border-2 border-white/20 rounded-2xl px-4 py-4 text-white placeholder-gray-300 focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-400/20 transition-all duration-300 text-lg backdrop-blur-sm pr-12 disabled:opacity-50 disabled:cursor-not-allowed"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                disabled={success}
+                disabled={success || !isValid}
                 className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-300 hover:text-white transition-colors disabled:opacity-50"
               >
                 {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
@@ -134,7 +169,7 @@ export default function ResetPassword() {
 
           <button
             onClick={handleResetPassword}
-            disabled={loading || success || !password || !confirmPassword}
+            disabled={loading || success || !password || !confirmPassword || !isValid}
             className="w-full bg-gradient-to-r from-blue-600 via-blue-500 to-blue-600 hover:from-blue-500 hover:via-blue-400 hover:to-blue-500 disabled:from-gray-600 disabled:to-gray-700 text-white py-4 rounded-2xl font-black text-xl shadow-2xl hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-300 disabled:transform-none disabled:cursor-not-allowed border-2 border-blue-400 hover:border-blue-300 glow-blue">
             {loading ? '⚽ Resetting password...' : '✅ RESET PASSWORD'}
           </button>
