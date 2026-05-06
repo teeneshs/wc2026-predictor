@@ -60,36 +60,6 @@ export default function ResetPassword() {
     setLoading(false)
   }
 
-  const handleResetPassword = async () => {
-    if (password !== confirmPassword) {
-      setMessage('Passwords do not match!')
-      return
-    }
-
-    if (password.length < 6) {
-      setMessage('Password must be at least 6 characters long!')
-      return
-    }
-
-    setLoading(true)
-    setMessage('')
-
-    const { error } = await supabase.auth.updateUser({
-      password: password,
-    })
-
-    if (error) {
-      setMessage(error.message)
-    } else {
-      setMessage('Password reset successfully! Redirecting to login...')
-      setSuccess(true)
-      setTimeout(() => {
-        router.push('/login')
-      }, 2000)
-    }
-    setLoading(false)
-  }
-
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-950 via-slate-900 to-red-950 text-white flex items-center justify-center px-4 relative overflow-hidden">
       {/* Animated background */}
