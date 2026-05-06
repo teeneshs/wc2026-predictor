@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function ResetPassword() {
@@ -14,10 +14,8 @@ export default function ResetPassword() {
   const [success, setSuccess] = useState(false)
   const [isValid, setIsValid] = useState(false)
   const router = useRouter()
-  const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Check if user has valid recovery session
     const checkRecoverySession = async () => {
       const { data } = await supabase.auth.getSession()
       if (data.session) {
@@ -44,18 +42,14 @@ export default function ResetPassword() {
     setLoading(true)
     setMessage('')
 
-    const { error } = await supabase.auth.updateUser({
-      password: password,
-    })
+    const { error } = await supabase.auth.updateUser({ password })
 
     if (error) {
       setMessage(error.message)
     } else {
       setMessage('Password reset successfully! Redirecting to login...')
       setSuccess(true)
-      setTimeout(() => {
-        router.push('/login')
-      }, 2000)
+      setTimeout(() => router.push('/login'), 2000)
     }
     setLoading(false)
   }
